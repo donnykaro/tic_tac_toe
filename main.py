@@ -1,14 +1,12 @@
 import sys
 
 board_dict = {7: ' ', 8: ' ', 9: ' ', 4: ' ', 5: ' ', 6: ' ', 1: ' ', 2: ' ', 3: ' '}
-player_name = ''
-games_counter = 0
 
 
 def restart():
-    if games_counter > 0:
-        for c in board_dict:
-            board_dict[c] = ' '
+    global board_dict
+    if (player_names[0][1] or player_names[1][1]) > 0:
+        board_dict = board_dict.fromkeys(board_dict, ' ')
 
 
 def win(player_name: str):
@@ -44,29 +42,40 @@ def check_if_draw():
         return True
 
 
+def check_if_play_again():
+    start_again = input("Chcesz zagrac jeszcze raz? tak albo nie: ")
+    if start_again.isalpha() and 'T' in start_again.upper():
+        start_game(player_names)
+    elif start_again.isalpha() and 'N' in start_again.upper():
+        print("Dzieki za gre!")
+        sys.exit(0)
+    elif (start_again.isalpha() and ('N' or 'T' not in start_again.upper())) or not start_again.isalpha():
+        print('Tak ciezko podazac za instrukcja?')
+        sys.exit(0)
+
+
+def check_if_win_or_draw(player_name: str):
+    if check_if_win(player_name) or check_if_draw():
+        if player_names[0][0] == player_name:
+            player_names[0][1] += 1
+        else:
+            player_names[1][1] += 1
+        print(f"{player_names[0][0]} ma {player_names[0][1]} wygranych gier")
+        print(f"{player_names[1][0]} ma {player_names[1][1]} wygranych gier")
+
+        check_if_play_again()
+
+    return True
+
+
 def update_board_dict(index: int, value: str, player_name: str):
     if board_dict[index] == ' ':
         board_dict[index] = value
         display_board()
 
-        if check_if_win(player_name) or check_if_draw():
-            if player_names[0][0] == player_name:
-                player_names[0][1] += 1
-            else:
-                player_names[1][1] += 1
-            print(f"{player_names[0][0]} ma {player_names[0][1]} wygranych gier")
-            print(f"{player_names[1][0]} ma {player_names[1][1]} wygranych gier")
-            start_again = input("Chcesz zagrac jeszcze raz? tak albo nie: ")
-            if start_again.isalpha() and 'T' in start_again.upper():
-                start_game(player_names)
-            elif start_again.isalpha() and 'N' in start_again.upper():
-                print("Dzieki za gre!")
-                sys.exit(0)
-            elif (start_again.isalpha() and ('N' or 'T' not in start_again.upper())) or not start_again.isalpha():
-                print('Tak ciezko podazac za instrukcja?')
-                sys.exit(0)
+        if check_if_win_or_draw(player_name) is not None:
+            return True
 
-        return True
     else:
         display_board()
         print('Pole zajete, wybierz inne')
@@ -87,25 +96,39 @@ def display_board():
             print('---------')
 
 
+def check_pos_update_board(player_name, player_x_or_o):
+    try:
+        position = int(input(f"{player_name}, wybierz pozycje 1-9: "))
+    except ValueError:
+        print("Podaj liczbe staloprzecinkowa")
+        return False
+    else:
+        if not 0 < position < 10:
+            print("pozycia musi byc pomiedzy 1 a 9")
+            return False
+        else:
+            if update_board_dict(position, player_x_or_o, player_name) is False:
+                return False
+            else:
+                return True
+
+
 def start_game(player_names):
     restart()
-    global games_counter
-    games_counter += 1
     display_board()
     while True:
         player_uno = input("Chcesz grac jako X czy O?")
-        player_uno_value = ''
-        player_dos_value = ''
         if player_uno.isalpha() and player_uno.upper() == 'X':
+            # why does this work?!
             player_uno_value = 'X'
             player_dos_value = 'O'
-            print(f"{player_names[0][0]} zaczyna jako {player_uno_value}")
-            print(f"{player_names[1][0]} zaczyna jako {player_dos_value}")
+            print(f"{player_names[0][0]} zaczyna jako X")
+            print(f"{player_names[1][0]} zaczyna jako O")
         elif player_uno.isalpha() and player_uno.upper() == 'O':
             player_uno_value = 'O'
             player_dos_value = 'X'
-            print(f"{player_names[0][0]} zaczyna jako {player_uno_value}")
-            print(f"{player_names[1][0]} zaczyna jako {player_dos_value}")
+            print(f"{player_names[0][0]} zaczyna jako O")
+            print(f"{player_names[1][0]} zaczyna jako X")
         else:
             continue
 
@@ -113,35 +136,15 @@ def start_game(player_names):
             for i in range(1, 3):
                 while True:
                     if i == 1:
-                        try:
-                            position = int(input(f"{player_names[0][0]}, wybierz pozycje 1-9: "))
-                        except ValueError:
-                            print("Podaj liczbe staloprzecinkowa")
-                            continue
+                        if check_pos_update_board(player_names[0][0], player_uno_value):
+                            break
                         else:
-                            if position < 1 or position > 9:
-                                print("pozycia musi byc pomiedzy 1 a 9")
-                                continue
-                            else:
-                                if update_board_dict(position, player_uno_value, player_names[0][0]) is False:
-                                    continue
-                                else:
-                                    break
+                            continue
                     else:
-                        try:
-                            position = int(input(f"{player_names[1][0]}, wybierz pozycje 1-9"))
-                        except ValueError:
-                            print("Podaj liczbe staloprzecinkowa")
-                            continue
+                        if check_pos_update_board(player_names[1][0], player_dos_value):
+                            break
                         else:
-                            if position < 1 or position > 9:
-                                print("pozycia musi byc pomiedzy 1 a 9")
-                                continue
-                            else:
-                                if update_board_dict(position, player_dos_value, player_names[1][0]) is False:
-                                    continue
-                                else:
-                                    break
+                            continue
 
 
 player_names = []
